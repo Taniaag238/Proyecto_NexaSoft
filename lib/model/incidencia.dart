@@ -20,7 +20,6 @@ class Incidencia {
   }) : prioridad = ['Baja', 'Media', 'Alta'].contains(prioridad) ? prioridad : 'Media';
 
   factory Incidencia.desdeJson(Map<String, dynamic> m) {
-    final p = m['prioridad']?.toString();
 
     return Incidencia(
       id: m['id']?.toString() ?? '',
