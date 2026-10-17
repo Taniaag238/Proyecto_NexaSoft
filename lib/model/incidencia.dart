@@ -5,6 +5,7 @@ class Incidencia {
   String cliente;
   String categoria;
   String estado;
+  String prioridad;
   String fecha;
 
   Incidencia({
@@ -14,10 +15,13 @@ class Incidencia {
     required this.cliente,
     required this.categoria,
     required this.estado,
+    required String prioridad,
     required this.fecha,
-  });
+  }) : prioridad = ['Baja', 'Media', 'Alta'].contains(prioridad) ? prioridad : 'Media';
 
   factory Incidencia.desdeJson(Map<String, dynamic> m) {
+    final p = m['prioridad']?.toString();
+
     return Incidencia(
       id: m['id']?.toString() ?? '',
       titulo: m['titulo']?.toString() ?? '',
@@ -25,6 +29,9 @@ class Incidencia {
       cliente: m['cliente']?.toString() ?? '',
       categoria: m['categoria']?.toString() ?? 'Software',
       estado: m['estado']?.toString() ?? 'Pendiente',
+      prioridad: ['Baja', 'Media', 'Alta'].contains(m['prioridad']?.toString()) 
+          ? m['prioridad'].toString()
+          : 'Media',
       fecha: m['fecha']?.toString() ?? '',
     );
   }
@@ -36,6 +43,7 @@ class Incidencia {
       'descripcion': descripcion,
       'cliente': cliente,
       'categoria': categoria,
+      'prioridad': prioridad, 
       'estado': estado,
       'fecha': fecha,
     };
