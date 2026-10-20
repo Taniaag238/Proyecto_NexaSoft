@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import '../model/incidencia.dart';
 import '../services/gestor_incidencias.dart';
@@ -13,14 +14,24 @@ class PantallaPrincipal extends StatefulWidget {
 
 class _PantallaPrincipalState extends State<PantallaPrincipal> {
   final GestorIncidencias g = GestorIncidencias();
+  final TextEditingController controladorBusqueda = TextEditingController();
+
   bool cargando = true;
   String? error;
   String busqueda = '';
+  String estadoSeleccionado = 'Todos';
+  String prioridadSeleccionada = 'Todas';
 
   @override
   void initState() {
     super.initState();
     cargar();
+  }
+
+  @override
+  void dispose() {
+    controladorBusqueda.dispose();
+    super.dispose();
   }
 
   Future<void> cargar() async {
@@ -51,9 +62,18 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
             children: [
               Icon(icono, size: 19, color: const Color(0xFF174C83)),
               const SizedBox(height: 4),
-              Text(valor, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              Text(etiqueta, textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12)),
+              Text(
+                valor,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                etiqueta,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12),
+              ),
             ],
           ),
         ),
@@ -64,7 +84,9 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   Future<void> abrirDetalle(Incidencia item) async {
     await Navigator.push<void>(
       context,
-      MaterialPageRoute(builder: (_) => PantallaDetalle(gestor: g, id: item.id)),
+      MaterialPageRoute(
+        builder: (_) => PantallaDetalle(gestor: g, id: item.id),
+      ),
     );
     if (mounted) setState(() {});
   }
@@ -84,7 +106,11 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
 
   @override
   Widget build(BuildContext context) {
-    final items = g.buscar(busqueda);
+    final items = g.buscar(
+      busqueda,
+      estado: estadoSeleccionado,
+      prioridad: prioridadSeleccionada,
+    );
     return Scaffold(
       appBar: AppBar(
         title: const Text('NexaSoft | Incidencias'),
@@ -96,10 +122,19 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                 context: context,
                 builder: (ctx) => AlertDialog(
                   title: const Text('Restablecer demostración'),
-                  content: const Text('Se descartarán los cambios locales y se cargarán las incidencias iniciales.'),
+                  content: const Text(
+                    'Se descartarán los cambios locales y se cargarán '
+                    'las incidencias iniciales.',
+                  ),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-                    FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Restablecer')),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancelar'),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('Restablecer'),
+                    ),
                   ],
                 ),
               );
@@ -109,7 +144,9 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                 if (mounted) setState(() {});
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al reiniciar: $e')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error al reiniciar: $e')),
+                  );
                 }
               }
             },
@@ -127,14 +164,22 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
       body: cargando
           ? const Center(child: CircularProgressIndicator())
           : error != null
-              ? Center(child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text(error!, textAlign: TextAlign.center),
-                    const SizedBox(height: 12),
-                    FilledButton(onPressed: cargar, child: const Text('Reintentar')),
-                  ]),
-                ))
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(error!, textAlign: TextAlign.center),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: cargar,
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               : Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 860),
@@ -142,59 +187,198 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                       children: [
                         Padding(
                           padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
-                          child: Row(children: [
-                            resumen('Pendientes', '${g.contar('Pendiente')}', Icons.pending_actions),
-                            resumen('En proceso', '${g.contar('En proceso')}', Icons.build_outlined),
-                            resumen('Resueltas', '${g.contar('Resuelta')}', Icons.check_circle_outline),
-                          ]),
+                          child: Row(
+                            children: [
+                              resumen(
+                                'Pendientes',
+                                '${g.contar('Pendiente')}',
+                                Icons.pending_actions,
+                              ),
+                              resumen(
+                                'En proceso',
+                                '${g.contar('En proceso')}',
+                                Icons.build_outlined,
+                              ),
+                              resumen(
+                                'Resueltas',
+                                '${g.contar('Resuelta')}',
+                                Icons.check_circle_outline,
+                              ),
+                            ],
+                          ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 17,
+                            vertical: 5,
+                          ),
                           child: TextField(
+                            controller: controladorBusqueda,
                             decoration: const InputDecoration(
                               labelText: 'Buscar incidencias',
                               hintText: 'Ejemplo: WiFi, correo, pantalla',
                               prefixIcon: Icon(Icons.search),
                               border: OutlineInputBorder(),
                             ),
-                            onChanged: (texto) => setState(() => busqueda = texto),
+                            onChanged: (texto) {
+                              setState(() => busqueda = texto);
+                            },
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text('${items.length} registros', style: const TextStyle(color: Colors.black54)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 17,
+                            vertical: 5,
+                          ),
+                          child: Wrap(
+                            spacing: 12,
+                            runSpacing: 8,
+                            children: [
+                              SizedBox(
+                                width: 250,
+                                child: DropdownButtonFormField<String>(
+                                  value: estadoSeleccionado,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Filtrar por estado',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  items: [
+                                    'Todos',
+                                    'Pendiente',
+                                    'En proceso',
+                                    'Resuelta',
+                                  ].map((estado) {
+                                    return DropdownMenuItem(
+                                      value: estado,
+                                      child: Text(estado),
+                                    );
+                                  }).toList(),
+                                  onChanged: (valor) {
+                                    if (valor != null) {
+                                      setState(() {
+                                        estadoSeleccionado = valor;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                width: 250,
+                                child: DropdownButtonFormField<String>(
+                                  value: prioridadSeleccionada,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Filtrar por prioridad',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  items: [
+                                    'Todas',
+                                    'Baja',
+                                    'Media',
+                                    'Alta',
+                                  ].map((prioridad) {
+                                    return DropdownMenuItem(
+                                      value: prioridad,
+                                      child: Text(prioridad),
+                                    );
+                                  }).toList(),
+                                  onChanged: (valor) {
+                                    if (valor != null) {
+                                      setState(() {
+                                        prioridadSeleccionada = valor;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 4,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${items.length} registros',
+                                  style: const TextStyle(
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ),
+                              TextButton.icon(
+                                onPressed: () {
+                                  controladorBusqueda.clear();
+                                  setState(() {
+                                    busqueda = '';
+                                    estadoSeleccionado = 'Todos';
+                                    prioridadSeleccionada = 'Todas';
+                                  });
+                                },
+                                icon: const Icon(Icons.filter_alt_off),
+                                label: const Text('Limpiar filtros'),
+                              ),
+                            ],
                           ),
                         ),
                         Expanded(
                           child: items.isEmpty
-                              ? const Center(child: Text('No se encontraron incidencias'))
+                              ? const Center(
+                                  child: Text(
+                                    'No se encontraron incidencias',
+                                  ),
+                                )
                               : ListView.builder(
-                                  padding: const EdgeInsets.only(left: 12, right: 12, bottom: 100),
+                                  padding: const EdgeInsets.only(
+                                    left: 12,
+                                    right: 12,
+                                    bottom: 100,
+                                  ),
                                   itemCount: items.length,
                                   itemBuilder: (context, i) {
                                     final item = items[i];
                                     return Card(
-                                      margin: const EdgeInsets.only(bottom: 10),
+                                      margin: const EdgeInsets.only(
+                                        bottom: 10,
+                                      ),
                                       child: ListTile(
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                        title: Text(item.titulo, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 8,
+                                        ),
+                                        title: Text(
+                                          item.titulo,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                         subtitle: Padding(
-                                          padding: const EdgeInsets.only(top: 8),
+                                          padding:
+                                              const EdgeInsets.only(top: 8),
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Text('${item.id}  ·  ${item.cliente}'),
+                                              Text(
+                                                '${item.id}  ·  ${item.cliente}',
+                                              ),
                                               const SizedBox(height: 6),
                                               Text(
                                                 'Prioridad: ${item.prioridad}',
                                                 style: TextStyle(
-                                                  color: item.prioridad == 'Alta'
+                                                  color: item.prioridad ==
+                                                          'Alta'
                                                       ? const Color(0xFFAC4052)
                                                       : item.prioridad == 'Baja'
-                                                          ? const Color(0xFF147D64)
-                                                          : const Color(0xFFB56B13),
+                                                          ? const Color(
+                                                              0xFF147D64,
+                                                            )
+                                                          : const Color(
+                                                              0xFFB56B13,
+                                                            ),
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),
@@ -202,14 +386,18 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                                               Text(
                                                 item.estado,
                                                 style: TextStyle(
-                                                  color: colorEstado(item.estado),
+                                                  color: colorEstado(
+                                                    item.estado,
+                                                  ),
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ),
-                                        trailing: const Icon(Icons.chevron_right),
+                                        trailing: const Icon(
+                                          Icons.chevron_right,
+                                        ),
                                         onTap: () => abrirDetalle(item),
                                       ),
                                     );
